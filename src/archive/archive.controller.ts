@@ -5,6 +5,9 @@ import {
   Param,
   UseInterceptors,
   UploadedFiles,
+  StreamableFile,
+  HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import { ArchiveService } from './archive.service';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -25,7 +28,12 @@ export class ArchiveController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.archiveService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    try {
+      const zipBuffer = await this.archiveService.findOne(id);
+      return new StreamableFile(zipBuffer);
+    } catch (e) {
+      throw new HttpException({ message: e.message }, HttpStatus.BAD_REQUEST);
+    }
   }
 }
