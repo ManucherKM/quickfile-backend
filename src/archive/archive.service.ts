@@ -8,6 +8,7 @@ import AdmZip from 'adm-zip';
 import path from 'path';
 import fs from 'fs';
 import { v4 } from 'uuid';
+import { getRandomStr } from 'src/utils';
 
 @Injectable()
 export class ArchiveService {
@@ -40,7 +41,7 @@ export class ArchiveService {
   }
 
   async getId() {
-    const id = v4();
+    const id = getRandomStr(6);
     const isExist = await this.findById(id);
 
     if (isExist) {
