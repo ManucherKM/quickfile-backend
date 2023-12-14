@@ -7,7 +7,6 @@ import { CreateFileDto } from 'src/file/dto/create-file.dto';
 import AdmZip from 'adm-zip';
 import path from 'path';
 import fs from 'fs';
-import { v4 } from 'uuid';
 import { getRandomStr } from 'src/utils';
 
 @Injectable()
