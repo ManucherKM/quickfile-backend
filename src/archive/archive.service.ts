@@ -70,8 +70,6 @@ export class ArchiveService {
 
     const zipBuffer = zip.toBuffer();
 
-    fs.writeFileSync('asdsad.zip', zipBuffer);
-
     return zipBuffer;
   }
 }
