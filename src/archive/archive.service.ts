@@ -72,4 +72,9 @@ export class ArchiveService {
 
     return zipBuffer;
   }
+
+  async exist(id: string) {
+    const foundArchive = await this.findById(id);
+    return !!foundArchive;
+  }
 }

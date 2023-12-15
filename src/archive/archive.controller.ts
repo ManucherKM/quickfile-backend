@@ -26,12 +26,21 @@ export class ArchiveController {
   uploadFiles(@UploadedFiles() files: Express.Multer.File[]) {
     return this.archiveService.uploadFiles(files);
   }
-
   @Get(':id')
   async findOne(@Param('id') id: string) {
     try {
       const zipBuffer = await this.archiveService.findOne(id);
       return new StreamableFile(zipBuffer);
+    } catch (e) {
+      throw new HttpException({ message: e.message }, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Get('exist/:id')
+  async exist(@Param('id') id: string) {
+    try {
+      const exist = await this.archiveService.exist(id);
+      return { exist };
     } catch (e) {
       throw new HttpException({ message: e.message }, HttpStatus.BAD_REQUEST);
     }
