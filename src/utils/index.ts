@@ -1,2 +1,2 @@
-export * from './getRandomNum';
-export * from './getRandomStr';
+export * from './getRandomNum'
+export * from './getRandomStr'
