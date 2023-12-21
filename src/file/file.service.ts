@@ -1,11 +1,14 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
+import { Cron } from '@nestjs/schedule'
 import { Model, Types } from 'mongoose'
 import { CreateFileDto } from './dto/create-file.dto'
 import { File } from './entities/file.entity'
 
 @Injectable()
 export class FileService {
+	private readonly logger = new Logger(FileService.name)
+
 	constructor(
 		@InjectModel(File.name)
 		private readonly fileModel: Model<File>,
@@ -25,5 +28,48 @@ export class FileService {
 
 	async findMany(ids: (string | Types.ObjectId)[]) {
 		return await this.fileModel.find({ _id: ids })
+	}
+
+	async removeOld() {
+		const dateNow = new Date()
+
+		const date7DaysAgo = new Date()
+		date7DaysAgo.setDate(dateNow.getDate() - 7)
+
+		const date9DaysAgo = new Date()
+		date9DaysAgo.setDate(dateNow.getDate() - 9)
+
+		console.log(dateNow.getDay())
+		console.log(date7DaysAgo.getDay())
+		console.log(date9DaysAgo.getDay())
+
+		const files = await this.fileModel.find({
+			createdAt: {
+				$lt: date7DaysAgo,
+				$gt: date9DaysAgo,
+			},
+		})
+
+		// for (const file of files) {
+		// 	const pathToFile = path.join('uploads', file.filename)
+		// 	fs.unlink(pathToFile, err => {
+		// 		if (err) throw err
+		// 		file.isDeleted = true
+		// 		file.save()
+		// 	})
+		// }
+
+		console.log(files)
+	}
+
+	// @Cron(CronExpression.EVERY_DAY_AT_4AM)
+	@Cron('10 * * * * *')
+	async handleCron() {
+		try {
+			this.logger.debug('Called when the current second is 10')
+			await this.removeOld()
+		} catch (e) {
+			console.log(e)
+		}
 	}
 }

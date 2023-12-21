@@ -21,6 +21,9 @@ export class ArchiveController {
 	@UseInterceptors(
 		FilesInterceptor('files', undefined, {
 			storage: fileStorage,
+			limits: {
+				fileSize: 3e8, // bytes
+			},
 		}),
 	)
 	uploadFiles(@UploadedFiles() files: Express.Multer.File[]) {

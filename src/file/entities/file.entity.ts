@@ -3,7 +3,9 @@ import { HydratedDocument } from 'mongoose'
 
 export type FileDocument = HydratedDocument<File>
 
-@Schema()
+@Schema({
+	timestamps: true,
+})
 export class File {
 	@Prop({ required: true, type: String, unique: true })
 	filename: string
@@ -16,6 +18,9 @@ export class File {
 
 	@Prop({ required: true, type: Number })
 	size: number
+
+	@Prop({ default: false, type: Boolean })
+	isDeleted: boolean
 }
 
 export const FileSchema = SchemaFactory.createForClass(File)
