@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Cron } from '@nestjs/schedule'
+import fs from 'fs'
 import { Model, Types } from 'mongoose'
+import path from 'path'
 import { CreateFileDto } from './dto/create-file.dto'
 import { File } from './entities/file.entity'
 
@@ -39,10 +41,6 @@ export class FileService {
 		const date9DaysAgo = new Date()
 		date9DaysAgo.setDate(dateNow.getDate() - 9)
 
-		console.log(dateNow.getDay())
-		console.log(date7DaysAgo.getDay())
-		console.log(date9DaysAgo.getDay())
-
 		const files = await this.fileModel.find({
 			createdAt: {
 				$lt: date7DaysAgo,
@@ -50,16 +48,14 @@ export class FileService {
 			},
 		})
 
-		// for (const file of files) {
-		// 	const pathToFile = path.join('uploads', file.filename)
-		// 	fs.unlink(pathToFile, err => {
-		// 		if (err) throw err
-		// 		file.isDeleted = true
-		// 		file.save()
-		// 	})
-		// }
-
-		console.log(files)
+		for (const file of files) {
+			const pathToFile = path.join('uploads', file.filename)
+			fs.unlink(pathToFile, err => {
+				if (err) throw err
+				file.isDeleted = true
+				file.save()
+			})
+		}
 	}
 
 	// @Cron(CronExpression.EVERY_DAY_AT_4AM)
