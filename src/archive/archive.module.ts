@@ -1,3 +1,4 @@
+import { S3Module } from '@/s3/s3.module'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { FileModule } from 'src/file/file.module'
@@ -9,6 +10,7 @@ import { Archive, ArchiveSchema } from './entities/archive.entity'
 	imports: [
 		MongooseModule.forFeature([{ name: Archive.name, schema: ArchiveSchema }]),
 		FileModule,
+		S3Module,
 	],
 	controllers: [ArchiveController],
 	providers: [ArchiveService],

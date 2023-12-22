@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { ArchiveService } from './archive.service'
-import { fileStorage } from './storage'
+import { fileStorage } from './normalize'
 
 @Controller('archive')
 export class ArchiveController {
@@ -26,13 +26,19 @@ export class ArchiveController {
 			},
 		}),
 	)
-	uploadFiles(@UploadedFiles() files: Express.Multer.File[]) {
-		return this.archiveService.uploadFiles(files)
-	}
-	@Get(':id')
-	async findOne(@Param('id') id: string) {
+	async uploadFiles(@UploadedFiles() files: Express.Multer.File[]) {
 		try {
-			const zipBuffer = await this.archiveService.findOne(id)
+			const id = await this.archiveService.uploadFiles(files)
+			return { id }
+		} catch (e) {
+			throw new HttpException({ message: e.message }, HttpStatus.BAD_REQUEST)
+		}
+	}
+
+	@Get(':id')
+	async getArchiveById(@Param('id') id: string) {
+		try {
+			const zipBuffer = await this.archiveService.getArchiveById(id)
 			return new StreamableFile(zipBuffer)
 		} catch (e) {
 			throw new HttpException({ message: e.message }, HttpStatus.BAD_REQUEST)

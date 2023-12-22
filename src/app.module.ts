@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { ScheduleModule } from '@nestjs/schedule'
 import * as env from 'env-var'
 import { ArchiveModule } from './archive/archive.module'
+import { S3Module } from './s3/s3.module'
 
 @Module({
 	imports: [
@@ -11,6 +12,7 @@ import { ArchiveModule } from './archive/archive.module'
 		ScheduleModule.forRoot(),
 		ArchiveModule,
 		MongooseModule.forRoot(env.get('MONGODB_URL').required().asString()),
+		S3Module,
 	],
 	controllers: [],
 	providers: [],

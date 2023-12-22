@@ -1,6 +1,6 @@
 export class CreateFileDto {
-	filename: string
-	originalname: string
+	fileName: string
+	originalName: string
 	mimetype: string
 	size: number
 }

@@ -8,10 +8,10 @@ export type FileDocument = HydratedDocument<File>
 })
 export class File {
 	@Prop({ required: true, type: String, unique: true })
-	filename: string
+	fileName: string
 
 	@Prop({ required: true, type: String })
-	originalname: string
+	originalName: string
 
 	@Prop({ required: true, type: String })
 	mimetype: string

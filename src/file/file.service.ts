@@ -1,9 +1,8 @@
+import { S3Service } from '@/s3/s3.service'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { Cron } from '@nestjs/schedule'
-import fs from 'fs'
+import { Cron, CronExpression } from '@nestjs/schedule'
 import { Model, Types } from 'mongoose'
-import path from 'path'
 import { CreateFileDto } from './dto/create-file.dto'
 import { File } from './entities/file.entity'
 
@@ -14,14 +13,11 @@ export class FileService {
 	constructor(
 		@InjectModel(File.name)
 		private readonly fileModel: Model<File>,
+		private readonly s3Service: S3Service,
 	) {}
 
 	async create(createFileDto: CreateFileDto) {
 		return await this.fileModel.create(createFileDto)
-	}
-
-	async findOne(id: string) {
-		return await this.fileModel.findById(id)
 	}
 
 	async createMany(files: CreateFileDto[]) {
@@ -32,7 +28,7 @@ export class FileService {
 		return await this.fileModel.find({ _id: ids })
 	}
 
-	async removeOld() {
+	private getDatesForRemoveFiles() {
 		const dateNow = new Date()
 
 		const date7DaysAgo = new Date()
@@ -41,6 +37,15 @@ export class FileService {
 		const date9DaysAgo = new Date()
 		date9DaysAgo.setDate(dateNow.getDate() - 9)
 
+		return {
+			date7DaysAgo,
+			date9DaysAgo,
+		}
+	}
+
+	async removeOld() {
+		const { date7DaysAgo, date9DaysAgo } = this.getDatesForRemoveFiles()
+
 		const files = await this.fileModel.find({
 			createdAt: {
 				$lt: date7DaysAgo,
@@ -48,21 +53,25 @@ export class FileService {
 			},
 		})
 
+		const promises = []
+
 		for (const file of files) {
-			const pathToFile = path.join('uploads', file.filename)
-			fs.unlink(pathToFile, err => {
-				if (err) throw err
-				file.isDeleted = true
-				file.save()
-			})
+			if (file.isDeleted) continue
+
+			promises.push(this.s3Service.remove(file.fileName))
+
+			file.isDeleted = true
+			file.save()
 		}
+
+		await Promise.all(promises)
 	}
 
-	// @Cron(CronExpression.EVERY_DAY_AT_4AM)
-	@Cron('10 * * * * *')
+	@Cron(CronExpression.EVERY_DAY_AT_4AM)
+	// @Cron('10 * * * * *')
 	async handleCron() {
 		try {
-			this.logger.debug('Called when the current second is 10')
+			// this.logger.debug('Called when the current second is 10')
 			await this.removeOld()
 		} catch (e) {
 			console.log(e)

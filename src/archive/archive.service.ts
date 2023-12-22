@@ -1,8 +1,9 @@
+import { CreateS3Dto } from '@/s3/dto/create-s3.dto'
+import { S3Service } from '@/s3/s3.service'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import AdmZip from 'adm-zip'
 import { Model } from 'mongoose'
-import path from 'path'
 import { CreateFileDto } from 'src/file/dto/create-file.dto'
 import { FileService } from 'src/file/file.service'
 import { getRandomStr } from 'src/utils'
@@ -14,32 +15,52 @@ export class ArchiveService {
 		@InjectModel(Archive.name)
 		private readonly archiveModel: Model<Archive>,
 		private readonly fileService: FileService,
+		private readonly s3Service: S3Service,
 	) {}
 
 	async uploadFiles(files: Express.Multer.File[]) {
+		const [models, s3] = this.getFormatedFiles(files)
+
+		const createdModels = await this.fileService.createMany(models)
+
+		await this.s3Service.createMany(s3)
+
+		const fileIds = createdModels.map(file => file._id)
+
 		const id = await this.getId()
-
-		const formatFiles: CreateFileDto[] = files.map(file => ({
-			filename: file.filename,
-			originalname: file.originalname,
-			size: file.size,
-			mimetype: file.mimetype,
-		}))
-
-		const createdFiles = await this.fileService.createMany(formatFiles)
-
-		const fileIds = createdFiles.map(file => file._id)
 
 		await this.archiveModel.create({
 			id,
 			files: fileIds,
 		})
 
-		return { id }
+		return id
 	}
 
-	async getId() {
+	private getFormatedFiles(files: Express.Multer.File[]) {
+		const s3: CreateS3Dto[] = []
+		const models: CreateFileDto[] = []
+
+		for (const file of files) {
+			s3[s3.length] = {
+				buffer: file.buffer,
+				fileName: file.filename,
+			}
+
+			models[models.length] = {
+				fileName: file.filename,
+				mimetype: file.mimetype,
+				originalName: file.originalname,
+				size: file.size,
+			}
+		}
+
+		return [models, s3] as [CreateFileDto[], CreateS3Dto[]]
+	}
+
+	private async getId() {
 		const id = getRandomStr(6)
+
 		const isExist = await this.findById(id)
 
 		if (isExist) {
@@ -53,18 +74,23 @@ export class ArchiveService {
 		return await this.archiveModel.findOne({ id })
 	}
 
-	async findOne(id: string) {
+	async getArchiveById(id: string) {
 		const foundArchive = await this.findById(id)
 
 		const fileIds = foundArchive.files
 
-		const files = await this.fileService.findMany(fileIds)
+		const fileModels = await this.fileService.findMany(fileIds)
+
+		const files = await this.s3Service.findManyByFileModels(fileModels)
 
 		const zip = new AdmZip()
 
-		for (const file of files) {
-			const filePath = path.join('uploads', file.filename)
-			zip.addLocalFile(filePath, undefined, file.originalname)
+		for (let i = 0; i < fileModels.length; i++) {
+			if (fileModels[i].isDeleted) {
+				throw new Error('The archive files could not be found.')
+			}
+
+			zip.addFile(fileModels[i].originalName, files[i] as Buffer)
 		}
 
 		const zipBuffer = zip.toBuffer()
