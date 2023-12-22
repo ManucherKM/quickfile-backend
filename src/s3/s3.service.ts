@@ -2,11 +2,13 @@ import { FileDocument } from '@/file/entities/file.entity'
 import {
 	DeleteObjectCommand,
 	GetObjectCommand,
-	PutObjectCommand,
 	S3Client,
 } from '@aws-sdk/client-s3'
+import { Upload } from '@aws-sdk/lib-storage'
 import { Injectable } from '@nestjs/common'
 import * as env from 'env-var'
+import { Readable } from 'stream'
+
 import { CreateS3Dto } from './dto/create-s3.dto'
 
 @Injectable()
@@ -24,17 +26,32 @@ export class S3Service {
 	private readonly s3Folder = 'files'
 
 	async create(createS3Dto: CreateS3Dto) {
-		const command = new PutObjectCommand({
-			Bucket: this.s3Bucket,
-			Key: this.getS3Path(createS3Dto.fileName),
-			Body: createS3Dto.buffer,
+		const Body = this.getReadableStream(createS3Dto.buffer)
+
+		const upload = new Upload({
+			client: this.s3Client,
+			params: {
+				Bucket: this.s3Bucket,
+				Key: this.getS3Path(createS3Dto.fileName),
+				Body,
+			},
 		})
 
-		return await this.s3Client.send(command)
+		const res = await upload.done()
+
+		return res
 	}
 
 	private getS3Path(fileName: string) {
 		return this.s3Folder + '/' + fileName
+	}
+
+	private getReadableStream(buffer: Buffer) {
+		const readable = new Readable()
+		readable._read = () => {}
+		readable.push(buffer)
+		readable.push(null)
+		return readable
 	}
 
 	async createMany(files: CreateS3Dto[]) {
