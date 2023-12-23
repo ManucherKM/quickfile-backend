@@ -22,7 +22,7 @@ export class ArchiveController {
 		FilesInterceptor('files', undefined, {
 			storage: fileStorage,
 			limits: {
-				fileSize: 3e8, // bytes
+				fileSize: 5e8, // 500 MB
 			},
 		}),
 	)

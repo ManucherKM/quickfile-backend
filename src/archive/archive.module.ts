@@ -1,6 +1,8 @@
 import { S3Module } from '@/s3/s3.module'
 import { Module } from '@nestjs/common'
+import { APP_GUARD } from '@nestjs/core'
 import { MongooseModule } from '@nestjs/mongoose'
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import { FileModule } from 'src/file/file.module'
 import { ArchiveController } from './archive.controller'
 import { ArchiveService } from './archive.service'
@@ -8,11 +10,23 @@ import { Archive, ArchiveSchema } from './entities/archive.entity'
 
 @Module({
 	imports: [
+		ThrottlerModule.forRoot([
+			{
+				ttl: 1000,
+				limit: 10,
+			},
+		]),
 		MongooseModule.forFeature([{ name: Archive.name, schema: ArchiveSchema }]),
 		FileModule,
 		S3Module,
 	],
 	controllers: [ArchiveController],
-	providers: [ArchiveService],
+	providers: [
+		ArchiveService,
+		{
+			provide: APP_GUARD,
+			useClass: ThrottlerGuard,
+		},
+	],
 })
 export class ArchiveModule {}
