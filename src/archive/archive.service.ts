@@ -7,6 +7,7 @@ import { Model } from 'mongoose'
 import { CreateFileDto } from 'src/file/dto/create-file.dto'
 import { FileService } from 'src/file/file.service'
 import { getRandomStr } from 'src/utils'
+import { v4 } from 'uuid'
 import { Archive } from './entities/archive.entity'
 
 @Injectable()
@@ -42,13 +43,15 @@ export class ArchiveService {
 		const models: CreateFileDto[] = []
 
 		for (const file of files) {
+			const fileName = this.getFileName()
+
 			s3[s3.length] = {
 				buffer: file.buffer,
-				fileName: file.filename,
+				fileName,
 			}
 
 			models[models.length] = {
-				fileName: file.filename,
+				fileName,
 				mimetype: file.mimetype,
 				originalName: file.originalname,
 				size: file.size,
@@ -56,6 +59,10 @@ export class ArchiveService {
 		}
 
 		return [models, s3] as [CreateFileDto[], CreateS3Dto[]]
+	}
+
+	getFileName() {
+		return v4()
 	}
 
 	private async getId() {

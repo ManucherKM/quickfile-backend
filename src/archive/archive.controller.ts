@@ -10,8 +10,8 @@ import {
 	UseInterceptors,
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
+import { memoryStorage } from 'multer'
 import { ArchiveService } from './archive.service'
-import { fileStorage } from './normalize'
 
 @Controller('archive')
 export class ArchiveController {
@@ -20,7 +20,7 @@ export class ArchiveController {
 	@Post()
 	@UseInterceptors(
 		FilesInterceptor('files', undefined, {
-			storage: fileStorage,
+			storage: memoryStorage(),
 			limits: {
 				fileSize: 5e8, // 500 MB
 			},
