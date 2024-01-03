@@ -12,8 +12,8 @@ import { Archive, ArchiveSchema } from './entities/archive.entity'
 	imports: [
 		ThrottlerModule.forRoot([
 			{
-				ttl: 10000,
-				limit: 3,
+				ttl: 1000,
+				limit: 10,
 			},
 		]),
 		MongooseModule.forFeature([{ name: Archive.name, schema: ArchiveSchema }]),

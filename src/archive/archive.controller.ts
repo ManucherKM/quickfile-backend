@@ -14,8 +14,6 @@ import { memoryStorage } from 'multer'
 import { ArchiveService } from './archive.service'
 import { NormalizeMiddleware } from './normalize'
 
-let i = 0
-
 @Controller('archive')
 export class ArchiveController {
 	constructor(private readonly archiveService: ArchiveService) {}
@@ -32,10 +30,8 @@ export class ArchiveController {
 	)
 	async uploadFiles(@UploadedFiles() files: Express.Multer.File[]) {
 		try {
-			// console.log('Count:', ++i)
-
 			const id = await this.archiveService.uploadFiles(files)
-			return { id: 's' }
+			return { id }
 		} catch (e) {
 			throw new HttpException({ message: e.message }, HttpStatus.BAD_REQUEST)
 		}
