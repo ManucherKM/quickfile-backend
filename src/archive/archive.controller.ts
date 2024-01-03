@@ -12,6 +12,9 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { memoryStorage } from 'multer'
 import { ArchiveService } from './archive.service'
+import { NormalizeMiddleware } from './normalize'
+
+let i = 0
 
 @Controller('archive')
 export class ArchiveController {
@@ -24,12 +27,15 @@ export class ArchiveController {
 			limits: {
 				fileSize: 5e8, // 500 MB
 			},
+			fileFilter: NormalizeMiddleware,
 		}),
 	)
 	async uploadFiles(@UploadedFiles() files: Express.Multer.File[]) {
 		try {
+			// console.log('Count:', ++i)
+
 			const id = await this.archiveService.uploadFiles(files)
-			return { id }
+			return { id: 's' }
 		} catch (e) {
 			throw new HttpException({ message: e.message }, HttpStatus.BAD_REQUEST)
 		}

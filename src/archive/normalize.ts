@@ -1,15 +1,14 @@
-import { diskStorage } from 'multer'
 import { v4 } from 'uuid'
 
-const normalizeFileName = (req, file, callback) => {
-	file.originalname = decodeURIComponent(file.originalname)
+export function NormalizeMiddleware(req, file, callback) {
+	const normalizedOriginalName = Buffer.from(
+		file.originalname,
+		'latin1',
+	).toString('utf-8')
 
-	const fileExt = file.originalname.split('.').pop()
-	const fileName = `${v4()}.${fileExt}`
+	file.originalname = normalizedOriginalName
 
-	callback(null, fileName)
+	file.filename = `${v4()}.${file.originalname.split('.').pop()}`
+
+	callback(null, true)
 }
-
-export const fileStorage = diskStorage({
-	filename: normalizeFileName,
-})
