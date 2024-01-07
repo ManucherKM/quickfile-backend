@@ -1,4 +1,5 @@
 import {
+	Body,
 	Controller,
 	Get,
 	HttpException,
@@ -6,32 +7,18 @@ import {
 	Param,
 	Post,
 	StreamableFile,
-	UploadedFiles,
-	UseInterceptors,
 } from '@nestjs/common'
-import { FilesInterceptor } from '@nestjs/platform-express'
-import { memoryStorage } from 'multer'
 import { ArchiveService } from './archive.service'
-import { NormalizeMiddleware } from './normalize'
+import { CreateArchiveDto } from './dto/create-archive.dto'
 
 @Controller('archive')
 export class ArchiveController {
 	constructor(private readonly archiveService: ArchiveService) {}
 
 	@Post()
-	@UseInterceptors(
-		FilesInterceptor('files', undefined, {
-			storage: memoryStorage(),
-			limits: {
-				fileSize: 5e8, // 500 MB
-			},
-			fileFilter: NormalizeMiddleware,
-		}),
-	)
-	async uploadFiles(@UploadedFiles() files: Express.Multer.File[]) {
+	async uploadFiles(@Body() createArchiveDto: CreateArchiveDto) {
 		try {
-			const id = await this.archiveService.uploadFiles(files)
-			return { id }
+			return await this.archiveService.uploadFiles(createArchiveDto)
 		} catch (e) {
 			throw new HttpException({ message: e.message }, HttpStatus.BAD_REQUEST)
 		}

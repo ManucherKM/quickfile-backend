@@ -1,12 +1,13 @@
-import { CreateS3Dto } from '@/s3/dto/create-s3.dto'
+import { CreateFileDto } from '@/file/dto/create-file.dto'
 import { S3Service } from '@/s3/s3.service'
+import { getRandomStr } from '@/utils'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import AdmZip from 'adm-zip'
 import { Model } from 'mongoose'
-import { CreateFileDto } from 'src/file/dto/create-file.dto'
 import { FileService } from 'src/file/file.service'
-import { getRandomStr } from 'src/utils'
+import { v4 } from 'uuid'
+import { CreateArchiveDto } from './dto/create-archive.dto'
 import { Archive } from './entities/archive.entity'
 
 @Injectable()
@@ -18,14 +19,16 @@ export class ArchiveService {
 		private readonly s3Service: S3Service,
 	) {}
 
-	async uploadFiles(files: Express.Multer.File[]) {
-		const [models, s3] = this.getFormatedFiles(files)
+	async uploadFiles(createArchiveDto: CreateArchiveDto) {
+		const formatedFiles = this.getFormatedFiles(createArchiveDto)
 
-		const createdModels = await this.fileService.createMany(models)
+		const files = await this.fileService.createMany(formatedFiles)
 
-		await this.s3Service.createMany(s3)
+		const fileIds = files.map(file => file._id)
 
-		const fileIds = createdModels.map(file => file._id)
+		const fileNames = formatedFiles.map(file => file.fileName)
+
+		const urls = await this.s3Service.getManyPresignedUrls(fileNames)
 
 		const id = await this.getId()
 
@@ -34,28 +37,10 @@ export class ArchiveService {
 			files: fileIds,
 		})
 
-		return id
-	}
-
-	private getFormatedFiles(files: Express.Multer.File[]) {
-		const s3: CreateS3Dto[] = []
-		const models: CreateFileDto[] = []
-
-		for (const file of files) {
-			s3[s3.length] = {
-				buffer: file.buffer,
-				fileName: file.filename,
-			}
-
-			models[models.length] = {
-				fileName: file.filename,
-				mimetype: file.mimetype,
-				originalName: file.originalname,
-				size: file.size,
-			}
+		return {
+			id,
+			urls,
 		}
-
-		return [models, s3] as [CreateFileDto[], CreateS3Dto[]]
 	}
 
 	private async getId() {
@@ -72,6 +57,14 @@ export class ArchiveService {
 
 	async findById(id: string) {
 		return await this.archiveModel.findOne({ id })
+	}
+
+	getFormatedFiles(createArchiveDto: CreateArchiveDto): CreateFileDto[] {
+		return createArchiveDto.files.reduce((res, val) => {
+			const ext = val.originalName.split('.').pop()
+			res[res.length] = { ...val, fileName: v4() + '.' + ext }
+			return res
+		}, [])
 	}
 
 	async getArchiveById(id: string) {
@@ -100,6 +93,7 @@ export class ArchiveService {
 
 	async exist(id: string) {
 		const foundArchive = await this.findById(id)
+
 		return !!foundArchive
 	}
 }

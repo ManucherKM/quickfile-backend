@@ -2,13 +2,15 @@ import { FileDocument } from '@/file/entities/file.entity'
 import {
 	DeleteObjectCommand,
 	GetObjectCommand,
+	PutObjectCommand,
+	PutObjectCommandInput,
 	S3Client,
 } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Injectable } from '@nestjs/common'
 import * as env from 'env-var'
 import { Readable } from 'stream'
-
 import { CreateS3Dto } from './dto/create-s3.dto'
 
 @Injectable()
@@ -92,5 +94,28 @@ export class S3Service {
 		})
 
 		return await this.s3Client.send(command)
+	}
+
+	async getPresignedUrl(fileName: string) {
+		const options: PutObjectCommandInput = {
+			Bucket: this.s3Bucket,
+			Key: this.getS3Path(fileName),
+		}
+
+		const command = new PutObjectCommand(options)
+
+		const url = await getSignedUrl(this.s3Client, command, { expiresIn: 60 })
+
+		return url
+	}
+
+	async getManyPresignedUrls(fileNames: string[]) {
+		const promises: Promise<string>[] = []
+
+		for (const fileName of fileNames) {
+			promises[promises.length] = this.getPresignedUrl(fileName)
+		}
+
+		return await Promise.all(promises)
 	}
 }
