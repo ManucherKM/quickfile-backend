@@ -94,6 +94,15 @@ export class ArchiveService {
 	async exist(id: string) {
 		const foundArchive = await this.findById(id)
 
-		return !!foundArchive
+		if (!foundArchive) {
+			return {
+				exist: false,
+			}
+		}
+
+		return {
+			exist: true,
+			length: foundArchive.files.length,
+		}
 	}
 }

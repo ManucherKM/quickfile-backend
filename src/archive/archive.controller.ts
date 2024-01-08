@@ -37,8 +37,7 @@ export class ArchiveController {
 	@Get('exist/:id')
 	async exist(@Param('id') id: string) {
 		try {
-			const exist = await this.archiveService.exist(id)
-			return { exist }
+			return await this.archiveService.exist(id)
 		} catch (e) {
 			throw new HttpException({ message: e.message }, HttpStatus.BAD_REQUEST)
 		}

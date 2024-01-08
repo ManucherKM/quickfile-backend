@@ -104,7 +104,7 @@ export class S3Service {
 
 		const command = new PutObjectCommand(options)
 
-		const url = await getSignedUrl(this.s3Client, command, { expiresIn: 60 })
+		const url = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 })
 
 		return url
 	}
