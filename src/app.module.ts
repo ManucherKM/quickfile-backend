@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
 import { ScheduleModule } from '@nestjs/schedule'
 import * as env from 'env-var'
+import { AppController } from './app.controller'
 import { ArchiveModule } from './archive/archive.module'
 import { S3Module } from './s3/s3.module'
 
@@ -14,7 +15,7 @@ import { S3Module } from './s3/s3.module'
 		MongooseModule.forRoot(env.get('MONGODB_URL').required().asString()),
 		S3Module,
 	],
-	controllers: [],
+	controllers: [AppController],
 	providers: [],
 })
 export class AppModule {}
