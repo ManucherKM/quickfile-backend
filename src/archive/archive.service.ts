@@ -26,9 +26,7 @@ export class ArchiveService {
 
 		const fileIds = files.map(file => file._id)
 
-		const fileNames = formatedFiles.map(file => file.fileName)
-
-		const urls = await this.s3Service.getManyPresignedUrls(fileNames)
+		const urls = await this.s3Service.createManyPresignedPost(formatedFiles)
 
 		const id = await this.getId()
 

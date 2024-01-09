@@ -2,12 +2,10 @@ import { FileDocument } from '@/file/entities/file.entity'
 import {
 	DeleteObjectCommand,
 	GetObjectCommand,
-	PutObjectCommand,
-	PutObjectCommandInput,
 	S3Client,
 } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { PresignedPost, createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import { Injectable } from '@nestjs/common'
 import * as env from 'env-var'
 import { Readable } from 'stream'
@@ -96,24 +94,31 @@ export class S3Service {
 		return await this.s3Client.send(command)
 	}
 
-	async getPresignedUrl(fileName: string) {
-		const options: PutObjectCommandInput = {
+	async createPresignedPost(file: {
+		fileName: string
+		size: number
+		mimetype: string
+	}) {
+		const { url, fields } = await createPresignedPost(this.s3Client, {
 			Bucket: this.s3Bucket,
-			Key: this.getS3Path(fileName),
-		}
+			Key: this.getS3Path(file.fileName),
+			Conditions: [['content-length-range', file.size, file.size]],
+			Expires: 86400, // 24h
+		})
 
-		const command = new PutObjectCommand(options)
-
-		const url = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 })
-
-		return url
+		return { url, fields }
 	}
 
-	async getManyPresignedUrls(fileNames: string[]) {
-		const promises: Promise<string>[] = []
+	async createManyPresignedPost(
+		files: { size: number; fileName: string; mimetype: string }[],
+	) {
+		const promises: Promise<{
+			url: string
+			fields: PresignedPost['fields']
+		}>[] = []
 
-		for (const fileName of fileNames) {
-			promises[promises.length] = this.getPresignedUrl(fileName)
+		for (const file of files) {
+			promises[promises.length] = this.createPresignedPost(file)
 		}
 
 		return await Promise.all(promises)

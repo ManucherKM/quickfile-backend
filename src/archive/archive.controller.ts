@@ -1,3 +1,4 @@
+import { ArchiveSizeGuard } from '@/guards/archive-size.guard'
 import {
 	Body,
 	Controller,
@@ -7,6 +8,7 @@ import {
 	Param,
 	Post,
 	StreamableFile,
+	UseGuards,
 } from '@nestjs/common'
 import { ArchiveService } from './archive.service'
 import { CreateArchiveDto } from './dto/create-archive.dto'
@@ -16,6 +18,7 @@ export class ArchiveController {
 	constructor(private readonly archiveService: ArchiveService) {}
 
 	@Post()
+	@UseGuards(ArchiveSizeGuard)
 	async uploadFiles(@Body() createArchiveDto: CreateArchiveDto) {
 		try {
 			return await this.archiveService.uploadFiles(createArchiveDto)
